@@ -246,6 +246,78 @@
       font-size: 12px;
     }
 
+    /* ── Unit Toggle Row ── */
+    .unitToggleRow{
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px;
+      margin: 10px 0 4px;
+      align-items:stretch;
+      background: linear-gradient(180deg, rgba(0,247,255,.05), rgba(0,247,255,.02));
+      border: 1px solid rgba(0,247,255,.18);
+      border-radius: 12px;
+      padding: 8px 10px;
+    }
+    .unitToggleGroup{
+      display:flex;
+      align-items:center;
+      gap:5px;
+      flex: 1 1 auto;
+    }
+    .unitToggleLbl{
+      font-size:11px;
+      font-weight:700;
+      color:rgba(200,230,255,.72);
+      margin-right:3px;
+      white-space:nowrap;
+      letter-spacing:.1px;
+    }
+    .unitToggleBtn{
+      cursor:pointer;
+      padding: 6px 14px;
+      border-radius: 999px;
+      border: 1.5px solid rgba(255,255,255,.16);
+      background: rgba(255,255,255,.05);
+      color: rgba(200,230,255,.62);
+      font-family: Orbitron, Rajdhani, system-ui;
+      font-weight: 800;
+      font-size: 13px;
+      user-select:none;
+      -webkit-tap-highlight-color: transparent;
+      transition: border-color .14s, background .14s, color .14s, box-shadow .14s;
+      white-space:nowrap;
+      letter-spacing:.1px;
+    }
+    .unitToggleBtn.on{
+      border-color: rgba(0,247,255,.70);
+      background: linear-gradient(180deg, rgba(0,247,255,.22), rgba(0,247,255,.10));
+      color: rgba(200,255,255,.98);
+      box-shadow: 0 0 16px rgba(0,247,255,.18), inset 0 0 0 1px rgba(0,247,255,.12);
+    }
+    .unitToggleBtn:hover:not(.on){
+      border-color: rgba(255,255,255,.30);
+      background: rgba(255,255,255,.10);
+      color: rgba(235,255,255,.88);
+    }
+    .unitToggleBtn:active{ transform: scale(.96); }
+    .unitToggleSep{
+      width:1px;
+      background: rgba(255,255,255,.10);
+      align-self: stretch;
+      margin: 0 4px;
+    }
+    .weightHintWrap{
+      display:flex;
+      align-items:flex-end;
+      padding-bottom:6px;
+    }
+    .weightHint{
+      font-size:11px;
+      color:rgba(0,247,255,.75);
+      margin-top:0;
+      font-weight:700;
+    }
+
     .commitRow{
       margin-top: 12px;
       display:flex;
@@ -550,6 +622,7 @@
     .colSp { color: rgba(0,247,255,.95); font-weight:700; }
     .colPulse{ color: rgba(74,168,255,.95); font-weight:700; }
     .colW{ color: rgba(160,220,255,.92); font-weight:700; }
+    .colTemp{ color: rgba(255,77,109,.92); font-weight:700; }
     .nowrap{ white-space:nowrap; }
     .muted{ color: rgba(200,230,255,.55); }
 
@@ -1932,6 +2005,21 @@
             <div class="chip" data-mode="meds">Meds only</div>
           </div>
           <div class="modeHint">Leave any field blank to skip it. All fields optional.</div>
+
+          <!-- ── UNIT TOGGLE (Temperature & Weight) ── -->
+          <div class="unitToggleRow" id="unitToggleRow">
+            <div class="unitToggleGroup">
+              <span class="unitToggleLbl">⚖ WEIGHT:</span>
+              <button class="unitToggleBtn on" id="unitWtKg" type="button">kg</button>
+              <button class="unitToggleBtn"    id="unitWtLb" type="button">lb</button>
+            </div>
+            <div class="unitToggleSep"></div>
+            <div class="unitToggleGroup">
+              <span class="unitToggleLbl">🌡 TEMP:</span>
+              <button class="unitToggleBtn on" id="unitTempC" type="button">°C</button>
+              <button class="unitToggleBtn"    id="unitTempF" type="button">°F</button>
+            </div>
+          </div>
           <div id="quickRow">
             <div class="qbtn qnorm" role="button" tabindex="0" data-preset="normal">✓ Normal</div>
             <div class="qbtn qelev" role="button" tabindex="0" data-preset="elevated">⚠ Elevated</div>
@@ -1982,17 +2070,20 @@
               </div>
             </div>
             <div>
-              <label>Weight (kg)</label>
+              <label id="lblWeight">Weight (kg)</label>
               <div class="field">
                 <input class="input" id="weight" inputmode="decimal" placeholder="79.2"/>
                 <span class="knob"></span>
+              </div>
+              <div class="weightHintWrap" id="weightHintWrap" style="display:none;">
+                <span class="weightHint" id="weightHint"></span>
               </div>
             </div>
           </div>
 
           <div class="grid2" id="tempGrid">
             <div>
-              <label>Temperature (°C)</label>
+              <label id="lblTemp">Temperature (°C)</label>
               <div class="field">
                 <input class="input" id="temp" inputmode="decimal" placeholder="36.6"/>
                 <span class="knob r"></span>
@@ -2189,7 +2280,7 @@
               <div class="cvWrap"><canvas id="cPulse"></canvas></div>
             </div>
             <div class="chartCard">
-              <div class="chartName">Weight</div>
+              <div class="chartName" id="chartNameWeight">Weight (kg)</div>
               <div class="cvWrap"><canvas id="cWeight"></canvas></div>
             </div>
             <div class="chartCard">
@@ -2197,7 +2288,7 @@
               <div class="cvWrap"><canvas id="cMeds"></canvas></div>
             </div>
             <div class="chartCard">
-              <div class="chartName">Temperature</div>
+              <div class="chartName" id="chartNameTemp">Temperature (°C)</div>
               <div class="cvWrap"><canvas id="cTemp"></canvas></div>
             </div>
           </div>
@@ -2219,8 +2310,8 @@
                 <th class="colSug">Sugar</th>
                 <th class="colSp">SpO₂</th>
                 <th class="colPulse">Pulse</th>
-                <th class="colW">Weight</th>
-                <th class="colTemp">Temp °C</th>
+                <th class="colW">Weight (kg / lb)</th>
+                <th class="colTemp" id="thTempHdr">Temp (°C / °F)</th>
                 <th>Meds/Notes</th>
                 <th>Controls</th>
               </tr>
@@ -2302,7 +2393,7 @@
                     <div class="apexRing" aria-hidden="true"></div>
                     <div class="apexGaugeMeta">
                       <div class="apexGaugeLabel">Temperature</div>
-                      <div class="apexGaugeValue"><span id="apexTempVal">—</span><span class="u">°C</span></div>
+                      <div class="apexGaugeValue"><span id="apexTempVal">—</span><span class="u" id="apexTempUnit">°C / °F</span></div>
                       <div class="apexGaugeStatus" id="apexTempStatus">—</div>
                     </div>
                     <div class="apexSpark" id="apexTempSpark" title="Trend (recent)"> </div>
@@ -2553,6 +2644,209 @@ function kgToLb(kg){
   if(!(typeof kg === "number" && Number.isFinite(kg))) return null;
   return kg * 2.2046226218;
 }
+function lbToKg(lb){
+  if(!(typeof lb === "number" && Number.isFinite(lb))) return null;
+  return lb / 2.2046226218;
+}
+function celsiusToFahrenheit(c){
+  if(!(typeof c === "number" && Number.isFinite(c))) return null;
+  return c * 9/5 + 32;
+}
+function fahrenheitToCelsius(f){
+  if(!(typeof f === "number" && Number.isFinite(f))) return null;
+  return (f - 32) * 5/9;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   UNIT PREFERENCE SYSTEM — Global, persistent, bulletproof
+   • Stores weight preference: "kg" or "lb"
+   • Stores temp  preference: "C"  or "F"
+   • Data is ALWAYS saved internally in kg and °C (metric)
+   • On input: if user chose lb, typed lb value → converted to kg before save
+   • On input: if user chose °F, typed °F value → converted to °C before save
+   • On display: always shows BOTH units everywhere (kg / lb, °C / °F)
+═══════════════════════════════════════════════════════════════════════════ */
+var UNIT_PREF_KEY = "FHC2_UNIT_PREF";
+var _unitPref = { weight: "kg", temp: "C" };
+(function(){
+  try{
+    var raw = localStorage.getItem(UNIT_PREF_KEY);
+    if(raw){
+      var p = JSON.parse(raw);
+      if(p && typeof p === "object"){
+        _unitPref.weight = (p.weight === "lb") ? "lb" : "kg";
+        _unitPref.temp   = (p.temp   === "F")  ? "F"  : "C";
+      }
+    }
+  }catch(ex){ _unitPref = { weight:"kg", temp:"C" }; }
+})();
+
+function getUnitPref(){ return { weight: _unitPref.weight, temp: _unitPref.temp }; }
+
+function setUnitPref(weight, temp){
+  _unitPref.weight = (weight === "lb") ? "lb" : "kg";
+  _unitPref.temp   = (temp   === "F")  ? "F"  : "C";
+  try{ localStorage.setItem(UNIT_PREF_KEY, JSON.stringify(_unitPref)); }catch(ex){}
+}
+
+/* ── Global unit UI sync function — call any time to refresh labels/placeholders ── */
+function syncUnitUI(){
+  var p = getUnitPref();
+
+  /* --- button states --- */
+  var bWtKg  = document.getElementById("unitWtKg");
+  var bWtLb  = document.getElementById("unitWtLb");
+  var bTmpC  = document.getElementById("unitTempC");
+  var bTmpF  = document.getElementById("unitTempF");
+
+  if(bWtKg && bWtLb){
+    bWtKg.classList.toggle("on", p.weight !== "lb");
+    bWtLb.classList.toggle("on", p.weight === "lb");
+  }
+  if(bTmpC && bTmpF){
+    bTmpC.classList.toggle("on", p.temp !== "F");
+    bTmpF.classList.toggle("on", p.temp === "F");
+  }
+
+  /* --- input labels --- */
+  var lblW = document.getElementById("lblWeight");
+  var lblT = document.getElementById("lblTemp");
+  if(lblW) lblW.textContent = (p.weight === "lb") ? "Weight (lb)"         : "Weight (kg)";
+  if(lblT) lblT.textContent = (p.temp   === "F")  ? "Temperature (°F)"   : "Temperature (°C)";
+
+  /* --- input placeholders --- */
+  var wtInp = document.getElementById("weight");
+  var tpInp = document.getElementById("temp");
+  if(wtInp) wtInp.placeholder = (p.weight === "lb") ? "175"  : "79.2";
+  if(tpInp) tpInp.placeholder = (p.temp   === "F")  ? "97.9" : "36.6";
+
+  /* --- chart card names --- */
+  var cNameW = document.getElementById("chartNameWeight");
+  var cNameT = document.getElementById("chartNameTemp");
+  if(cNameW) cNameW.textContent = (p.weight === "lb") ? "Weight (lb)" : "Weight (kg)";
+  if(cNameT) cNameT.textContent = (p.temp   === "F")  ? "Temperature (°F)" : "Temperature (°C)";
+
+  /* --- weight conversion hint --- */
+  _refreshWeightHint();
+
+  /* --- temp conversion hint --- */
+  _refreshTempHint();
+}
+
+function _refreshWeightHint(){
+  var p = getUnitPref();
+  var wtInp   = document.getElementById("weight");
+  var hintW   = document.getElementById("weightHintWrap");
+  var hintTxt = document.getElementById("weightHint");
+  if(!wtInp || !hintW || !hintTxt) return;
+  var v = parseFloat(wtInp.value);
+  if(Number.isFinite(v) && v > 0){
+    if(p.weight === "lb"){
+      hintTxt.textContent = "≈ " + (v / 2.2046226218).toFixed(1) + " kg will be stored";
+    } else {
+      hintTxt.textContent = "≈ " + Math.round(v * 2.2046226218) + " lb";
+    }
+    hintTxt.style.color = "rgba(0,247,255,.75)";
+    hintW.style.display = "flex";
+  } else {
+    hintW.style.display = "none";
+    hintTxt.textContent = "";
+  }
+}
+
+function _refreshTempHint(){
+  var p = getUnitPref();
+  var tpInp   = document.getElementById("temp");
+  var hintEl  = document.getElementById("tempFhint");
+  if(!tpInp || !hintEl) return;
+  var v = parseFloat(tpInp.value);
+  if(p.temp === "F"){
+    /* user typed °F */
+    if(Number.isFinite(v) && v > 68 && v < 122){
+      var tc = (v - 32) * 5/9;
+      var isNorm  = tc >= 36.1 && tc <= 37.2;
+      var isFever = tc > 37.9;
+      var status  = tc < 35   ? " 🔵 Hypothermia"
+                  : tc < 36.1 ? " ⚠️ Low"
+                  : isNorm    ? " ✅ Normal"
+                  : tc <= 37.9? " ⚠️ Elevated"
+                  : tc <= 38.9? " 🔴 Fever"
+                  :             " 🚨 High Fever";
+      hintEl.textContent = "= " + tc.toFixed(1) + " °C stored" + status;
+      hintEl.style.color = isNorm ? "#3dff8a" : isFever ? "#ff4d6d" : "#ffb020";
+    } else {
+      hintEl.textContent = "";
+      hintEl.style.color = "";
+    }
+  } else {
+    /* user typed °C */
+    if(Number.isFinite(v) && v > 20 && v < 50){
+      var tf = (v * 9/5 + 32).toFixed(1);
+      var isNormC  = v >= 36.1 && v <= 37.2;
+      var isFeverC = v > 37.9;
+      var statusC  = v < 35    ? " 🔵 Hypothermia"
+                   : v < 36.1  ? " ⚠️ Low"
+                   : isNormC   ? " ✅ Normal"
+                   : v <= 37.9 ? " ⚠️ Elevated"
+                   : v <= 38.9 ? " 🔴 Fever"
+                   :             " 🚨 High Fever";
+      hintEl.textContent = "= " + tf + " °F" + statusC;
+      hintEl.style.color = isNormC ? "#3dff8a" : isFeverC ? "#ff4d6d" : "#ffb020";
+    } else {
+      hintEl.textContent = "";
+      hintEl.style.color = "";
+    }
+  }
+}
+
+/* Auto-initialize unit UI as soon as DOM is ready */
+(function(){
+  function _initUnitToggle(){
+    /* Apply visual state immediately */
+    syncUnitUI();
+
+    /* Wire input live-hint events */
+    var wtInp = document.getElementById("weight");
+    var tpInp = document.getElementById("temp");
+    if(wtInp) wtInp.addEventListener("input", _refreshWeightHint);
+    if(tpInp) tpInp.addEventListener("input", _refreshTempHint);
+
+    /* Wire toggle buttons */
+    function _bindBtn(id, action){
+      var el = document.getElementById(id);
+      if(!el) return;
+      el.addEventListener("click", function(){
+        action();
+        syncUnitUI();
+        /* Clear stale values in the toggled field so user can't accidentally submit the old unit */
+        if(id === "unitWtKg" || id === "unitWtLb"){
+          var wInp = document.getElementById("weight");
+          if(wInp){ wInp.value = ""; _refreshWeightHint(); }
+        }
+        if(id === "unitTempC" || id === "unitTempF"){
+          var tInp = document.getElementById("temp");
+          var fh   = document.getElementById("tempFhint");
+          if(tInp){ tInp.value = ""; }
+          if(fh){ fh.textContent = ""; fh.style.color = ""; }
+        }
+        /* Refresh charts to show correct unit axis labels */
+        try{ render(); }catch(ex){}
+      });
+    }
+
+    _bindBtn("unitWtKg",  function(){ setUnitPref("kg", getUnitPref().temp);   });
+    _bindBtn("unitWtLb",  function(){ setUnitPref("lb", getUnitPref().temp);   });
+    _bindBtn("unitTempC", function(){ setUnitPref(getUnitPref().weight, "C");  });
+    _bindBtn("unitTempF", function(){ setUnitPref(getUnitPref().weight, "F");  });
+  }
+
+  if(document.readyState === "loading"){
+    document.addEventListener("DOMContentLoaded", _initUnitToggle, { once: true });
+  } else {
+    /* DOM already ready (script runs after parse) */
+    _initUnitToggle();
+  }
+})();
 function cmToFeetIn(cm){
   if(!(typeof cm === "number" && Number.isFinite(cm)) || cm <= 0) return null;
   const totalIn = cm / 2.54;
@@ -2864,8 +3158,7 @@ function buildSeriesForCanvas(canvasId, sampledEntries){
   const glu  = sampledEntries.map(e => e.glucose);
   const sp   = sampledEntries.map(e => e.spo2);
   const pul  = sampledEntries.map(e => e.pulse);
-  const wt   = sampledEntries.map(e => e.weight);
-  const tmp  = sampledEntries.map(e => e.temperature);
+  const pref = getUnitPref();
 
   switch(canvasId){
     case "cBP":
@@ -2876,13 +3169,35 @@ function buildSeriesForCanvas(canvasId, sampledEntries){
       return { series:[{name:"SpO2",color:theme.cyan,values:sp}] };
     case "cPulse":
       return { series:[{name:"Pulse",color:theme.blue,values:pul}] };
-    case "cWeight":
-      return { series:[{name:"Weight",color:theme.white,values:wt}] };
+    case "cWeight":{
+      if(pref.weight === "lb"){
+        const wtLb = sampledEntries.map(e => {
+          const v = e.weight;
+          if(typeof v === "number" && Number.isFinite(v)) return parseFloat((v * 2.2046226218).toFixed(1));
+          return v;
+        });
+        return { series:[{name:"Weight (lb)",color:theme.white,values:wtLb}] };
+      }
+      const wt = sampledEntries.map(e => e.weight);
+      return { series:[{name:"Weight (kg)",color:theme.white,values:wt}] };
+    }
     case "cTemp":{
+      if(pref.temp === "F"){
+        const tmpF = sampledEntries.map(e => {
+          const v = e.temperature;
+          if(typeof v === "number" && Number.isFinite(v)) return parseFloat((v * 9/5 + 32).toFixed(1));
+          return v;
+        });
+        const validF = tmpF.filter(v => typeof v === "number" && Number.isFinite(v));
+        const minF = validF.length ? (validF.reduce((a,b)=>a<b?a:b,validF[0]) - 1) : 95;
+        const maxF = validF.length ? (validF.reduce((a,b)=>a>b?a:b,validF[0]) + 1) : 104;
+        return { series:[{name:"Temp (°F)",color:theme.red,values:tmpF}], minMaxOverride:{min:minF,max:maxF} };
+      }
+      const tmp = sampledEntries.map(e => e.temperature);
       const validT = tmp.filter(v => typeof v === "number" && Number.isFinite(v));
       const minT = validT.length ? (validT.reduce((a,b)=>a<b?a:b,validT[0]) - 0.5) : 35;
       const maxT = validT.length ? (validT.reduce((a,b)=>a>b?a:b,validT[0]) + 0.5) : 40;
-      return { series:[{name:"Temp °C",color:theme.red,values:tmp}], minMaxOverride:{min:minT,max:maxT} };
+      return { series:[{name:"Temp (°C)",color:theme.red,values:tmp}], minMaxOverride:{min:minT,max:maxT} };
     }
     case "cMeds":{
       const pills   = sampledEntries.map(e => medsCountPills(e.meds));
@@ -2957,8 +3272,26 @@ function commit(){
     glucose: parseNum(getVal("glu")),
     spo2: parseNum(getVal("spo2")),
     pulse: parseNum(getVal("pulse")),
-    weight: parseNum(getVal("weight")),
-    temperature: parseNum(getVal("temp")),
+    weight: (function(){
+      var raw = parseNum(getVal("weight"));
+      if(raw === null) return null;
+      // If user entered in lb, convert to kg for storage
+      var pref = getUnitPref();
+      if(pref.weight === "lb" && typeof raw === "number" && Number.isFinite(raw)){
+        return parseFloat((raw / 2.2046226218).toFixed(2));
+      }
+      return raw;
+    })(),
+    temperature: (function(){
+      var raw = parseNum(getVal("temp"));
+      if(raw === null) return null;
+      // If user entered in °F, convert to °C for storage
+      var pref = getUnitPref();
+      if(pref.temp === "F" && typeof raw === "number" && Number.isFinite(raw)){
+        return parseFloat(((raw - 32) * 5/9).toFixed(2));
+      }
+      return raw;
+    })(),
     meds: (getVal("meds") || "").trim(),
     notes: (getVal("notes") || "").trim()
   };
@@ -4508,13 +4841,15 @@ function teleEntryEditorHTML(e){
         <input class="apexInp" id="teleEditPulse" inputmode="numeric" value="${escapeHtml(v(e.pulse))}"/>
       </div>
       <div>
-        <div class="apexLbl">Weight (kg)</div>
-        <input class="apexInp" id="teleEditW" inputmode="decimal" value="${escapeHtml(v(e.weight))}"/>
+        <div class="apexLbl">Weight — always enter in kg (stored in kg; shown as kg / lb throughout)</div>
+        <input class="apexInp" id="teleEditW" inputmode="decimal" value="${escapeHtml(v(e.weight))}" placeholder="kg e.g. 79.2"/>
+        ${(typeof e.weight === "number" && Number.isFinite(e.weight)) ? `<div style="font-size:11px;color:rgba(200,230,255,.52);margin-top:3px;">≈ ${Math.round(e.weight * 2.2046226218)} lb</div>` : ""}
       </div>
 
       <div>
-        <div class="apexLbl">Temperature (°C)</div>
-        <input class="apexInp" id="teleEditTemp" inputmode="decimal" placeholder="36.6" value="${escapeHtml(v(e.temperature))}"/>
+        <div class="apexLbl">Temperature — always enter in °C (stored in °C; shown as °C / °F throughout)</div>
+        <input class="apexInp" id="teleEditTemp" inputmode="decimal" placeholder="°C e.g. 36.6" value="${escapeHtml(v(e.temperature))}"/>
+        ${(typeof e.temperature === "number" && Number.isFinite(e.temperature)) ? `<div style="font-size:11px;color:rgba(200,230,255,.52);margin-top:3px;">= ${(e.temperature * 9/5 + 32).toFixed(1)} °F</div>` : ""}
       </div>
       <div></div>
 
@@ -5001,9 +5336,19 @@ function render(){
     renderChart($("cGlu"), { type:"line", labels:["—","—"], series:[{name:"Glucose",color:theme.amber,values:[null,null]}] });
     renderChart($("cSpO2"), { type:"line", labels, series:[{name:"SpO2",color:theme.cyan,values:[null,null]}] });
     renderChart($("cPulse"), { type:"line", labels, series:[{name:"Pulse",color:theme.blue,values:[null,null]}] });
-    renderChart($("cWeight"), { type:"line", labels:["—","—"], series:[{name:"Weight",color:theme.white,values:[null,null]}] });
+    (function(){
+      var pref = getUnitPref();
+      var wName = pref.weight === "lb" ? "Weight (lb)" : "Weight (kg)";
+      renderChart($("cWeight"), { type:"line", labels:["—","—"], series:[{name:wName,color:theme.white,values:[null,null]}] });
+      var wLabelEl = $("chartNameWeight"); if(wLabelEl) wLabelEl.textContent = pref.weight === "lb" ? "Weight (lb)" : "Weight (kg)";
+    })();
     renderChart($("cMeds"), { type:"line", labels:["—","—"], series:[{name:"Total pills",color:theme.green,values:[null,null]}], minMaxOverride:{min:0,max:5} });
-    if($("cTemp")) renderChart($("cTemp"), { type:"line", labels:["—","—"], series:[{name:"Temp °C",color:theme.red,values:[null,null]}] });
+    if($("cTemp")){
+      var pref = getUnitPref();
+      var tName = pref.temp === "F" ? "Temp (°F)" : "Temp (°C)";
+      renderChart($("cTemp"), { type:"line", labels:["—","—"], series:[{name:tName,color:theme.red,values:[null,null]}] });
+      var tLabelEl = $("chartNameTemp"); if(tLabelEl) tLabelEl.textContent = pref.temp === "F" ? "Temperature (°F)" : "Temperature (°C)";
+    }
 
     renderApex(gate);
     return;
@@ -5087,8 +5432,18 @@ function render(){
           <td class="colSug">${escapeHtml(e.glucose ?? "—")}</td>
           <td class="colSp">${escapeHtml(e.spo2 ?? "—")}</td>
           <td class="colPulse">${escapeHtml(e.pulse ?? "—")}</td>
-          <td class="colW">${escapeHtml(e.weight ?? "—")}</td>
-          <td class="colTemp">${(typeof e.temperature === "number" && Number.isFinite(e.temperature)) ? escapeHtml(e.temperature.toFixed(1)) : "—"}</td>
+          <td class="colW">${(function(){
+            var wv = e.weight;
+            if(!(typeof wv === "number" && Number.isFinite(wv))) return "—";
+            var lb = (wv * 2.2046226218);
+            return escapeHtml(wv.toFixed(1) + " kg / " + Math.round(lb) + " lb");
+          })()}</td>
+          <td class="colTemp">${(function(){
+            var tv = e.temperature;
+            if(!(typeof tv === "number" && Number.isFinite(tv))) return "—";
+            var tf = (tv * 9/5 + 32);
+            return escapeHtml(tv.toFixed(1) + " °C / " + tf.toFixed(1) + " °F");
+          })()}</td>
           <td>${mn}</td>
           <td>
             <button class="ctrlBtn edit" onclick="editEntry('${escapeHtml(e.id)}')">Edit</button>
@@ -5156,16 +5511,49 @@ function render(){
   renderChart($("cGlu"),  { type:"line", labels, series:[{name:"Glucose",color:theme.amber,values:glu}] });
   renderChart($("cSpO2"), { type:"line", labels, series:[{name:"SpO2",color:theme.cyan,values:sp}] });
   renderChart($("cPulse"),{ type:"line", labels, series:[{name:"Pulse",color:theme.blue,values:pul}] });
-  renderChart($("cWeight"),{ type:"line", labels, series:[{name:"Weight",color:theme.white,values:wt}] });
+
+  // Weight chart — respect unit preference (always stored in kg, display in kg or lb)
+  (function(){
+    var pref = getUnitPref();
+    var chartWEl = $("cWeight");
+    var wLabelEl = $("chartNameWeight");
+    if(pref.weight === "lb"){
+      var wtLb = wt.map(function(v){ return (typeof v === "number" && Number.isFinite(v)) ? parseFloat((v * 2.2046226218).toFixed(1)) : v; });
+      renderChart(chartWEl, { type:"line", labels, series:[{name:"Weight (lb)",color:theme.white,values:wtLb}] });
+      if(wLabelEl) wLabelEl.textContent = "Weight (lb)";
+    } else {
+      renderChart(chartWEl, { type:"line", labels, series:[{name:"Weight (kg)",color:theme.white,values:wt}] });
+      if(wLabelEl) wLabelEl.textContent = "Weight (kg)";
+    }
+  })();
+
   renderChart($("cMeds"), { type:"line", labels, series:[{name:"Total pills",color:theme.green,values:pills}], minMaxOverride:{min:0,max:maxP+1}, extraByIndex: medsExtra });
+
+  // Temperature chart — respect unit preference (always stored in °C, display in °C or °F)
   if($("cTemp")){
-    const validT = tmp.filter(v => typeof v === "number" && Number.isFinite(v));
-    const minT = validT.length ? (validT.reduce((a,b)=>a<b?a:b,validT[0]) - 0.5) : 35;
-    const maxT = validT.length ? (validT.reduce((a,b)=>a>b?a:b,validT[0]) + 0.5) : 40;
-    renderChart($("cTemp"), { type:"line", labels, series:[{name:"Temp °C",color:theme.red,values:tmp}], minMaxOverride:{min:minT,max:maxT} });
+    var pref = getUnitPref();
+    var cTempEl = $("cTemp");
+    var tLabelEl = $("chartNameTemp");
+    if(pref.temp === "F"){
+      var tmpF = tmp.map(function(v){ return (typeof v === "number" && Number.isFinite(v)) ? parseFloat((v * 9/5 + 32).toFixed(1)) : v; });
+      var validF = tmpF.filter(function(v){ return typeof v === "number" && Number.isFinite(v); });
+      var minF = validF.length ? (validF.reduce(function(a,b){return a<b?a:b;},validF[0]) - 1) : 95;
+      var maxF = validF.length ? (validF.reduce(function(a,b){return a>b?a:b;},validF[0]) + 1) : 104;
+      renderChart(cTempEl, { type:"line", labels, series:[{name:"Temp (°F)",color:theme.red,values:tmpF}], minMaxOverride:{min:minF,max:maxF} });
+      if(tLabelEl) tLabelEl.textContent = "Temperature (°F)";
+    } else {
+      var validT = tmp.filter(function(v){ return typeof v === "number" && Number.isFinite(v); });
+      var minT = validT.length ? (validT.reduce(function(a,b){return a<b?a:b;},validT[0]) - 0.5) : 35;
+      var maxT = validT.length ? (validT.reduce(function(a,b){return a>b?a:b;},validT[0]) + 0.5) : 40;
+      renderChart(cTempEl, { type:"line", labels, series:[{name:"Temp (°C)",color:theme.red,values:tmp}], minMaxOverride:{min:minT,max:maxT} });
+      if(tLabelEl) tLabelEl.textContent = "Temperature (°C)";
+    }
   }
 
   renderApex(gate);
+
+  // Keep unit labels, placeholders and button states in sync after every render
+  try{ if(typeof syncUnitUI === "function") syncUnitUI(); }catch(ex){}
 }
 
 /* ===============================
@@ -5680,7 +6068,16 @@ function renderApex(gate){
   // Temperature
   const tc = lastTempEntry?.temperature;
   const tcEl = $("apexTempVal");
-  if(tcEl) tcEl.textContent = (Number.isFinite(tc) ? tc.toFixed(1) : "—");
+  if(tcEl){
+    if(Number.isFinite(tc)){
+      const tf = (tc * 9/5 + 32).toFixed(1);
+      tcEl.textContent = tc.toFixed(1) + " / " + tf;
+    } else {
+      tcEl.textContent = "—";
+    }
+  }
+  const apexTempUnitEl = $("apexTempUnit");
+  if(apexTempUnitEl) apexTempUnitEl.textContent = "°C / °F";
   const tS = tempStatus(tc);
   const tSt = $("apexTempStatus");
   if(tSt){ tSt.textContent = tS.txt; tSt.className = `apexGaugeStatus ${tS.cls}`; }
@@ -5731,7 +6128,7 @@ if(wSpark){
     title: "Weight & BMI",
     points: ptsW,
     rows: (pt)=>[
-      { name:"Weight", color:"rgba(0,247,255,.85)", value: (Number.isFinite(pt?.wt)? pt.wt.toFixed(1):"—") + " kg" },
+      { name:"Weight", color:"rgba(0,247,255,.85)", value: (Number.isFinite(pt?.wt)? (pt.wt.toFixed(1) + " kg / " + Math.round(pt.wt * 2.2046226218) + " lb") :"—") },
       { name:"BMI", color:"rgba(235,255,255,.70)", value: (Number.isFinite(pt?.bmi)? pt.bmi.toFixed(1):"—") },
     ]
   }));
@@ -6142,27 +6539,6 @@ function init(){
 
   if(keyEl) keyEl.addEventListener("input", () => render());
 
-  // Live °F hint as user types temperature in °C
-  const tempInp = $("temp");
-  const tempFhintEl = $("tempFhint");
-  if(tempInp && tempFhintEl){
-    const updateTempHint = () => {
-      const v = parseFloat(tempInp.value);
-      if(Number.isFinite(v) && v > 20 && v < 50){
-        const tf = (v * 9/5 + 32).toFixed(1);
-        const isNorm = v >= 36.1 && v <= 37.2;
-        const isFever = v > 37.9;
-        const status = v < 35 ? " 🔵 Hypothermia" : v < 36.1 ? " ⚠️ Low" : isNorm ? " ✅ Normal" : v <= 37.9 ? " ⚠️ Elevated" : v <= 38.9 ? " 🔴 Fever" : " 🚨 High Fever";
-        tempFhintEl.textContent = "= " + tf + " °F" + status;
-        tempFhintEl.style.color = isNorm ? "#3dff8a" : isFever ? "#ff4d6d" : "#ffb020";
-      } else {
-        tempFhintEl.textContent = "";
-        tempFhintEl.style.color = "";
-      }
-    };
-    tempInp.addEventListener("input", updateTempHint);
-  }
-
   const exJson = $("exportJsonBtn"); if(exJson) exJson.addEventListener("click", exportJSON);
   const exCsv  = $("exportCsvBtn");  if(exCsv)  exCsv.addEventListener("click", exportCSV);
   const exXls  = $("exportXlsBtn");  if(exXls)  exXls.addEventListener("click", exportXLS);
@@ -6183,6 +6559,7 @@ function init(){
   // Mode UI (Telemetry / Apex). If one fails, the other still works.
   try{ initModeUI(); }catch(e){ console.error(e); }
   try{ initApexUI(); }catch(e){ console.error(e); }
+  // Unit toggle is self-initializing via its own DOMContentLoaded listener (see global unit system above)
 
   // tooltips (only if canvases exist)
   ["cBP","cGlu","cSpO2","cPulse","cWeight","cMeds","cTemp"].forEach(id => {
