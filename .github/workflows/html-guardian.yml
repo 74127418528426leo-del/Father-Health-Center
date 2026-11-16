@@ -148,23 +148,29 @@ jobs:
 
       - name: Check published GitHub Pages app
         id: live_check
-        if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+        if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
         shell: bash
         run: |
           set -euo pipefail
-          status="$(curl --silent --show-error --location --max-time 30 \
-            --output "$RUNNER_TEMP/live-page.html" \
-            --write-out '%{http_code}' "$LIVE_SITE_URL")"
+          attempt=1
+          status=000
+          while [[ "$attempt" -le 5 ]]; do
+            status="$(curl --silent --show-error --location --max-time 15 \
+              --output "$RUNNER_TEMP/live-page.html" \
+              --write-out '%{http_code}' "$LIVE_SITE_URL" || true)"
+            if [[ "$status" == "200" ]] && grep -qi 'Father Health Command Center' "$RUNNER_TEMP/live-page.html"; then
+              echo "http_status=$status" >> "$GITHUB_OUTPUT"
+              echo "Live page returned HTTP 200 and the expected app title (attempt $attempt)."
+              exit 0
+            fi
+            echo "Live probe attempt $attempt did not pass (HTTP $status); retrying in 10 seconds."
+            sleep 10
+            attempt=$((attempt + 1))
+          done
           echo "http_status=$status" >> "$GITHUB_OUTPUT"
-          if [[ "$status" != "200" ]]; then
-            echo "::error::Live page returned HTTP $status."
-            exit 1
-          fi
-          if ! grep -qi 'Father Health Command Center' "$RUNNER_TEMP/live-page.html"; then
-            echo "::error::Live page returned HTTP 200 but the expected app title was missing."
-            exit 1
-          fi
-          echo "Live page returned HTTP 200 and the expected app title."
+          echo "::error::Live page did not return HTTP 200 with the expected app title after 5 attempts."
+          exit 1
+
 
       - name: Write run summary
         if: always()
@@ -234,7 +240,7 @@ jobs:
             echo "::error::Inline JavaScript syntax check did not pass."
             exit 1
           fi
-          if [[ ( "$EVENT_NAME" == "schedule" || "$EVENT_NAME" == "workflow_dispatch" ) && "$LIVE_RESULT" != "success" ]]; then
+          if [[ "$LIVE_RESULT" != "success" && ( "$EVENT_NAME" == "schedule" || "$EVENT_NAME" == "workflow_dispatch" || ( "$EVENT_NAME" == "push" && "$GITHUB_REF" == "refs/heads/main" ) ) ]]; then
             echo "::error::Published-page check did not pass."
             exit 1
           fi
