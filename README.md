@@ -12,7 +12,7 @@ It:
 
 - validates every HTML file in the repository with a pinned HTML validator;
 - checks the syntax of every inline JavaScript block without executing it;
-- checks that the published GitHub Pages app returns HTTP 200 and the expected title on scheduled and manual runs;
+- checks that the published GitHub Pages app returns HTTP 200 and the expected title on main pushes, scheduled runs, and manual runs, with short retries for deployment timing;
 - writes a readable run summary and detailed logs in the [Actions tab](https://github.com/74127418528426leo-del/Father-Health-Center/actions/workflows/html-guardian.yml).
 
 Existing single-file style and accessibility findings are visible as warnings; structural errors that cannot be safely auto-fixed fail the check and remain visible in the run log.
