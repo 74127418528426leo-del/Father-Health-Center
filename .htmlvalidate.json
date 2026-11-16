@@ -1,0 +1,20 @@
+{
+  "extends": [
+    "html-validate:document"
+  ],
+  "rules": {
+    "doctype-style": "warn",
+    "void-style": "warn",
+    "prefer-native-element": "warn",
+    "no-inline-style": "warn",
+    "autocomplete-password": "warn",
+    "aria-label-misuse": "warn",
+    "no-implicit-input-type": "warn",
+    "no-trailing-whitespace": "warn",
+    "wcag/h63": "warn",
+    "no-raw-characters": "warn",
+    "no-implicit-button-type": "warn",
+    "require-sri": "warn",
+    "input-missing-label": "warn"
+  }
+}
