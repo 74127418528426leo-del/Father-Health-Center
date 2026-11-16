@@ -48,7 +48,7 @@ jobs:
             ! -path './.git/*' \
             ! -path '*/node_modules/*' \
             -print0 | sort -z > "$RUNNER_TEMP/html-files"
-          count="$(python3 -c 'import sys; print(sum(1 for x in sys.stdin.buffer.read().split(b"\\0") if x))' < "$RUNNER_TEMP/html-files")"
+          count="$(python3 -c 'import sys; print(sys.stdin.buffer.read().count(bytes([0])))' < "$RUNNER_TEMP/html-files")"
           if [[ "$count" -eq 0 ]]; then
             echo "::error::No HTML files were found in the repository."
             exit 1
