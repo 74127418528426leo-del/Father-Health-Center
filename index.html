@@ -1,4 +1,4 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en" data-health-build="7.0">
 <head>
   <meta charset="utf-8"/>
@@ -2859,7 +2859,7 @@ body:has(#fhc14Panel:not([hidden])) #fhc23ToolsDock{display:none!important}
               <div class="v"><span id="snapSpPulse">—</span></div>
             </div>
 
-            
+
             <div class="tile w">
               <div class="k">
                 <span class="ico" aria-hidden="true">
@@ -2999,12 +2999,12 @@ body:has(#fhc14Panel:not([hidden])) #fhc23ToolsDock{display:none!important}
         </div>
         <div id="tablePagBar"></div>
 
-      
+
         </div><!-- /fhcViewTelemetry -->
 
         <div id="fhcViewApex" class="apexRoot" aria-label="Apex Hub View">
           <div class="apexTopBar">
-            <div class="apexTitle">Apex Health: Father’s Command & Wellness Hub</div>
+            <div class="apexTitle">Apex Health: Father’s Command &amp; Wellness Hub</div>
             <div class="apexIcons">
               <div class="apexIconBtn" id="apexBell" title="Alerts">
                 <span class="apexDot" id="apexBellDot"></span>
@@ -3260,7 +3260,7 @@ body:has(#fhc14Panel:not([hidden])) #fhc23ToolsDock{display:none!important}
     </div>
   </div>
 
-  
+
   <!-- Apex Hub Modals (non-destructive, additive) -->
   <div class="apexOverlay" id="apexOverlay" aria-hidden="true" style="display:none;">
     <div class="apexDialog" role="dialog" aria-modal="true" aria-labelledby="apexDialogTitle">
@@ -9659,12 +9659,12 @@ ready=true;
 
 <button id="fhc14Launch" type="button" aria-haspopup="dialog" aria-label="Open live BMI and complete health statistics">◈ SMART STATISTICS</button>
 <section id="fhc14Panel" hidden role="dialog" aria-modal="true" aria-label="Live health statistics">
- <header id="fhc14Top"><div><h1>✦ LIVE HEALTH INTELLIGENCE</h1><p>Real records · BMI trajectory · Trends & variability · No fabricated measurements</p></div><div class="fhc14Actions"><button type="button" id="fhc14Ask">✧ Ask AI</button><button type="button" id="fhc15From14" onclick="FHC14Stats.close(); FHC15.open();">◈ Manual Data</button><button type="button" id="fhc14Copy">Copy Summary</button><button type="button" id="fhc14Refresh">↻ Refresh</button><button type="button" id="fhc14Close" class="fhc14Gold">✕ Close</button></div></header>
+ <header id="fhc14Top"><div><h1>✦ LIVE HEALTH INTELLIGENCE</h1><p>Real records · BMI trajectory · Trends &amp; variability · No fabricated measurements</p></div><div class="fhc14Actions"><button type="button" id="fhc14Ask">✧ Ask AI</button><button type="button" id="fhc15From14" onclick="FHC14Stats.close(); FHC15.open();">◈ Manual Data</button><button type="button" id="fhc14Copy">Copy Summary</button><button type="button" id="fhc14Refresh">↻ Refresh</button><button type="button" id="fhc14Close" class="fhc14Gold">✕ Close</button></div></header>
  <main id="fhc14Content">
   <div class="fhc14Controls" aria-label="Statistics range"><span>Analysis period</span><button type="button" data-fhc14-days="7" aria-pressed="false">7D</button><button type="button" data-fhc14-days="30" aria-pressed="true">30D</button><button type="button" data-fhc14-days="90" aria-pressed="false">90D</button><button type="button" data-fhc14-days="365" aria-pressed="false">1Y</button><button type="button" data-fhc14-days="0" aria-pressed="false">ALL</button><span id="fhc14PeriodInfo"></span></div>
   <div id="fhc14Notice" class="fhc14Banner" role="status"></div>
   <div class="fhc14Grid" id="fhc14Cards"></div>
-  <div class="fhc14Sections"><section class="fhc14Section"><h2>◈ BMI EVOLUTION & BODY WEIGHT</h2><canvas id="fhc14Plot" aria-label="BMI trend derived from recorded weight and profile height" role="img"></canvas><div id="fhc14PlotDescription" class="fhc14Hint"></div><div class="fhc14Entry"><label for="fhc14Height">Profile height (cm)</label><input id="fhc14Height" inputmode="decimal" placeholder="e.g. 165"/><button type="button" id="fhc14SaveHeight">Save height</button><button type="button" data-fhc14-chart="bmi">⛶ Full-screen BMI</button></div></section><section class="fhc14Section"><h3>◈ PAIRED BLOOD PRESSURE</h3><div id="fhc14BPDetails"></div><p class="fhc14Hint">Pulse pressure = systolic − diastolic. Estimated MAP = (systolic + 2 × diastolic) ÷ 3, from paired values in the same entry; estimates are not invasive measurements.</p><button type="button" data-fhc14-chart="bp">⛶ Full-screen blood-pressure chart</button></section></div>
+  <div class="fhc14Sections"><section class="fhc14Section"><h2>◈ BMI EVOLUTION &amp; BODY WEIGHT</h2><canvas id="fhc14Plot" aria-label="BMI trend derived from recorded weight and profile height" role="img"></canvas><div id="fhc14PlotDescription" class="fhc14Hint"></div><div class="fhc14Entry"><label for="fhc14Height">Profile height (cm)</label><input id="fhc14Height" inputmode="decimal" placeholder="e.g. 165"/><button type="button" id="fhc14SaveHeight">Save height</button><button type="button" data-fhc14-chart="bmi">⛶ Full-screen BMI</button></div></section><section class="fhc14Section"><h3>◈ PAIRED BLOOD PRESSURE</h3><div id="fhc14BPDetails"></div><p class="fhc14Hint">Pulse pressure = systolic − diastolic. Estimated MAP = (systolic + 2 × diastolic) ÷ 3, from paired values in the same entry; estimates are not invasive measurements.</p><button type="button" data-fhc14-chart="bp">⛶ Full-screen blood-pressure chart</button></section></div>
   <section class="fhc14Section"><h3>◈ ALL RECORDED MEASUREMENTS — STATISTICS</h3><div class="fhc14TableWrap"><table class="fhc14Table" id="fhc14Table"><thead><tr><th>Metric</th><th>Records</th><th>Latest</th><th>Mean</th><th>Median</th><th>Std. dev.</th><th>Min–Max</th><th>First→Last</th><th>Weekly slope</th><th>Chart</th></tr></thead><tbody></tbody></table></div></section>
   <section class="fhc14Section"><h3>◈ OTHER RECORDED INFORMATION</h3><div id="fhc14Other"></div></section>
   <div class="fhc14Notes">BMI is weight (kg) divided by height (m) squared. CDC BMI categories apply to adults aged 20+ only and are screening references, not diagnoses. Every displayed average is an average of recorded observations—not a continuous or 24-hour average. Slopes are historical least-squares estimates, not future predictions. No data is sent to the internet by this statistics viewer.</div>
@@ -9776,7 +9776,7 @@ ready=true;
   <section class="fhc15Section"><h3>✚ ADD OR EDIT A DAY</h3><form id="fhc15Form" novalidate><div class="fhc15FormHeader"><label>Log date<input id="fhc15Date" type="date" required/></label><span class="fhc15Hint">Choose a date to edit an existing day.<br/>Leave measurements blank if not taken.</span></div><div id="fhc15Categories" class="fhc15Pick" role="group" aria-label="Measurement categories"></div><div id="fhc15Fields" class="fhc15FieldGrid"></div><div class="fhc15ButtonRow"><button type="submit" class="fhc15Gold">✓ Save today's measurements</button><button type="button" id="fhc15Clear">Clear form</button><button type="button" id="fhc15Delete">Delete this day's manual log</button></div><p id="fhc15Status" class="fhc15Status" role="status" aria-live="polite"></p></form></section>
  </div>
  <div id="fhc15More"><section class="fhc15Section"><h3>◈ STATISTICAL DETAIL</h3><p class="fhc15Hint">Averages, ranges, variability and rates use recorded values only; statistical trends are not forecasts.</p><div class="fhc15TableWrap"><table class="fhc15Table"><thead><tr><th>Measurement</th><th>n</th><th>Latest</th><th>Mean</th><th>Min – Max</th><th>Std. dev.</th><th>7-day trend</th></tr></thead><tbody id="fhc15Table"></tbody></table></div></section>
- <section class="fhc15Section"><h3>◇ RELATIONSHIPS & DATA QUALITY</h3><div id="fhc15Links"></div><div id="fhc15Quality" class="fhc15Notes"></div></section></div>
+ <section class="fhc15Section"><h3>◇ RELATIONSHIPS &amp; DATA QUALITY</h3><div id="fhc15Links"></div><div id="fhc15Quality" class="fhc15Notes"></div></section></div>
  <section class="fhc15Section"><h3>◷ YOUR SAVED MANUAL DAYS</h3><p class="fhc15Hint">These logs are stored locally on this browser. The standard JSON, CSV, TXT and XLSX full backup includes them when exported with this version.</p><div class="fhc15TableWrap"><table class="fhc15Table"><thead><tr><th>Date</th><th>Recorded measurements</th><th>Action</th></tr></thead><tbody id="fhc15Saved"></tbody></table></div></section>
  <div class="fhc15Notice">Measurement summaries are descriptive, not medical diagnoses. BMI uses saved height and weight; waist ratios need a manually entered waist measurement. Lab numbers are displayed as entered and are not interpreted without clinical context. Your records are saved locally without encryption; keep backup files private.</div>
  </main>
@@ -10060,7 +10060,7 @@ body:has(#fhc16Lab:not([hidden])) #fhc13Launch{visibility:hidden!important;point
     <div class="f16HeatLegend"><span class="f16Dot" style="background:#26a6ed"></span>Below 18.5 <span class="f16Dot" style="background:#35c980"></span>18.5–24.9 <span class="f16Dot" style="background:#f7bf53"></span>25–29.9 <span class="f16Dot" style="background:#f27d3d"></span>30–34.9 <span class="f16Dot" style="background:#e64c77"></span>35–39.9 <span class="f16Dot" style="background:#a96aff"></span>40+</div>
     <div id="fhc16HeatInfo" class="f16Selection" aria-live="polite">Tap or focus the chart to explore calculated BMI values. Gold marks the selected recorded measurement.</div>
    </section>
-   <section class="f16Panel f16Wide" id="fhc16ChartPanel"><div class="f16PanelHead"><div><h3>◈ RECORDED WEIGHT & BMI — CINEMATIC TIMELINE</h3><p>Each luminous marker is a real dated entry · animation moves between entries, not predicted measurements</p></div><div class="f16TimelineControls"><button type="button" id="fhc16Series" aria-pressed="false">BMI chart</button><button type="button" id="fhc16ChartFull" class="f16Gold">⛶ Expand chart</button></div></div>
+   <section class="f16Panel f16Wide" id="fhc16ChartPanel"><div class="f16PanelHead"><div><h3>◈ RECORDED WEIGHT &amp; BMI — CINEMATIC TIMELINE</h3><p>Each luminous marker is a real dated entry · animation moves between entries, not predicted measurements</p></div><div class="f16TimelineControls"><button type="button" id="fhc16Series" aria-pressed="false">BMI chart</button><button type="button" id="fhc16ChartFull" class="f16Gold">⛶ Expand chart</button></div></div>
     <canvas id="fhc16Timeline" tabindex="0" role="img" aria-label="Timeline of recorded BMI and weight with arrow-key navigation"></canvas>
     <div class="f16Playback"><button id="fhc16Play" class="f16Cyan" type="button" aria-label="Play chronological measurements">▶ Play</button><input id="fhc16Scrub" type="range" min="0" max="0" value="0" step="1" aria-label="Choose dated measurement"/><span id="fhc16Frame">No measurements</span><button id="fhc16Speed" type="button" aria-label="Change playback speed">1×</button></div>
    </section>
