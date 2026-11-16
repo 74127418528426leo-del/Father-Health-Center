@@ -15,7 +15,7 @@ It:
 - checks that the published GitHub Pages app returns HTTP 200 and the expected title on scheduled and manual runs;
 - writes a readable run summary and detailed logs in the [Actions tab](https://github.com/74127418528426leo-del/Father-Health-Center/actions/workflows/html-guardian.yml).
 
-When the validator can repair markup safely, the workflow opens or updates a repair pull request. It does not merge repairs or rewrite application logic. Issues that cannot be safely auto-fixed fail the check and remain visible in the run log.
+Existing single-file style and accessibility findings are visible as warnings; structural errors that cannot be safely auto-fixed fail the check and remain visible in the run log.
 
 ## Open the live status
 
