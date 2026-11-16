@@ -178,9 +178,9 @@ jobs:
         run: |
           if [[ "$HTML_INITIAL" == "success" ]]; then
             html_status="PASS"
+            if [[ "$FIX_CHANGED" == "true" ]]; then
               html_status="PASS; safe fixes proposed in PR"
             fi
-            html_status="PASS"
           elif [[ "$HTML_FIX" == "success" && "$HTML_RECHECK" == "success" ]]; then
             html_status="AUTO-FIXED; review PR if one was opened"
           else
