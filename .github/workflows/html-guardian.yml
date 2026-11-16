@@ -26,7 +26,6 @@ jobs:
     timeout-minutes: 15
     permissions:
       contents: write
-      pull-requests: write
     env:
       HTML_VALIDATE_VERSION: "11.21.1"
       LIVE_SITE_URL: "https://74127418528426leo-del.github.io/Father-Health-Center/"
@@ -102,17 +101,17 @@ jobs:
         shell: bash
         run: python3 .github/scripts/check-inline-js.py .
 
-      - name: Open a repair pull request
+      - name: Publish safe repair branch
         if: steps.repair_changes.outputs.changed == 'true' && steps.html_recheck.outcome == 'success' && steps.js_check.outcome == 'success' && github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+        id: publish_fix
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           FIX_BRANCH: automation/html-guardian-fixes
         shell: bash
         run: |
           set -euo pipefail
           mapfile -d '' html_files < "$RUNNER_TEMP/html-files"
           if git diff --quiet -- "${html_files[@]}"; then
-            echo "The validator found a failure but produced no supported changes."
+            echo "No safe HTML changes remain."
             exit 0
           fi
 
@@ -129,11 +128,9 @@ jobs:
               fi
             done
             if [[ "$same_html" == "true" ]]; then
-              existing_pr="$(gh pr list --repo "$GITHUB_REPOSITORY" --head "${GITHUB_REPOSITORY_OWNER}:$FIX_BRANCH" --base main --state open --json number --jq '.[0].number')"
-              if [[ -n "$existing_pr" && "$existing_pr" != "null" ]]; then
-                echo "The same safe repair is already proposed; leaving its branch unchanged."
-                exit 0
-              fi
+              echo "The repair branch already contains these exact changes."
+              echo "url=$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/tree/$FIX_BRANCH" >> "$GITHUB_OUTPUT"
+              exit 0
             fi
           fi
 
@@ -145,24 +142,9 @@ jobs:
             echo "No tracked HTML changes remain after auto-fix."
             exit 0
           fi
-
           git commit -m "Apply safe HTML auto-fixes"
-          gh auth setup-git
           git push --force origin "$FIX_BRANCH"
-
-          pr_number="$(gh pr list --repo "$GITHUB_REPOSITORY" --head "${GITHUB_REPOSITORY_OWNER}:$FIX_BRANCH" --base main --state open --json number --jq '.[0].number')"
-          if [[ -z "$pr_number" || "$pr_number" == "null" ]]; then
-            gh pr create \
-              --repo "$GITHUB_REPOSITORY" \
-              --base main \
-              --head "$FIX_BRANCH" \
-              --title "HTML Guardian: safe markup repairs" \
-              --body "The HTML Guardian applied only fixes supported by html-validate and verified the resulting HTML and inline JavaScript in the same run. Please review before merging. No application logic or health data was changed."
-          else
-            gh pr edit "$pr_number" \
-              --title "HTML Guardian: safe markup repairs" \
-              --body "The HTML Guardian applied only fixes supported by html-validate and verified the resulting HTML and inline JavaScript in the same run. Please review before merging. No application logic or health data was changed."
-          fi
+          echo "url=$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/tree/$FIX_BRANCH" >> "$GITHUB_OUTPUT"
 
       - name: Check published GitHub Pages app
         id: live_check
@@ -192,6 +174,7 @@ jobs:
           HTML_FIX: ${{ steps.html_autofix.outcome }}
           HTML_RECHECK: ${{ steps.html_recheck.outcome }}
           FIX_CHANGED: ${{ steps.repair_changes.outputs.changed }}
+          FIX_BRANCH_URL: ${{ steps.publish_fix.outputs.url }}
           JS_RESULT: ${{ steps.js_check.outcome }}
           LIVE_RESULT: ${{ steps.live_check.outcome }}
           EVENT_NAME: ${{ github.event_name }}
@@ -200,10 +183,10 @@ jobs:
           if [[ "$HTML_INITIAL" == "success" ]]; then
             html_status="PASS"
             if [[ "$FIX_CHANGED" == "true" ]]; then
-              html_status="PASS; safe fixes proposed in PR"
+              html_status="PASS; safe fixes available on repair branch"
             fi
           elif [[ "$HTML_FIX" == "success" && "$HTML_RECHECK" == "success" ]]; then
-            html_status="AUTO-FIXED; review PR if one was opened"
+            html_status="AUTO-FIXED; review repair branch"
           else
             html_status="NEEDS REVIEW"
           fi
@@ -214,6 +197,9 @@ jobs:
             echo "- Trigger: $EVENT_NAME"
             echo "- HTML files scanned: ${FILE_COUNT:-unknown}"
             echo "- HTML result: **$html_status**"
+            if [[ -n "$FIX_BRANCH_URL" ]]; then
+              echo "- Safe fix branch: [review the changes]($FIX_BRANCH_URL)"
+            fi
             echo "- Inline JavaScript syntax: **$JS_RESULT**"
             if [[ "$LIVE_RESULT" == "skipped" ]]; then
               echo "- Published-page check: skipped for this event"
