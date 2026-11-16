@@ -1,0 +1,216 @@
+name: HTML Guardian
+
+on:
+  push:
+    branches:
+      - "**"
+  pull_request:
+    branches:
+      - main
+  schedule:
+    # Every 15 minutes, offset from the top of the hour to reduce schedule delays.
+    - cron: "7,22,37,52 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: html-guardian-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  guard:
+    name: Check HTML, JavaScript, and live page
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+      pull-requests: write
+    env:
+      HTML_VALIDATE_VERSION: "11.21.1"
+      LIVE_SITE_URL: "https://74127418528426leo-del.github.io/Father-Health-Center/"
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Find HTML files
+        id: files
+        shell: bash
+        run: |
+          set -euo pipefail
+          find . -type f -name '*.html' \
+            ! -path './.git/*' \
+            ! -path '*/node_modules/*' \
+            -print0 | sort -z > "$RUNNER_TEMP/html-files"
+          count="$(python3 -c 'import sys; print(sum(1 for x in sys.stdin.buffer.read().split(b"\\0") if x))' < "$RUNNER_TEMP/html-files")"
+          if [[ "$count" -eq 0 ]]; then
+            echo "::error::No HTML files were found in the repository."
+            exit 1
+          fi
+          echo "count=$count" >> "$GITHUB_OUTPUT"
+          echo "Found $count HTML file(s)." >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Validate HTML
+        id: html_validate
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -d '' html_files < "$RUNNER_TEMP/html-files"
+          npx --yes "html-validate@${HTML_VALIDATE_VERSION}" --formatter stylish "${html_files[@]}"
+
+      - name: Apply supported markup auto-fixes
+        id: html_autofix
+        if: steps.html_validate.outcome == 'failure' && github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -d '' html_files < "$RUNNER_TEMP/html-files"
+          npx --yes "html-validate@${HTML_VALIDATE_VERSION}" --fix --formatter stylish "${html_files[@]}"
+
+      - name: Recheck after auto-fixes
+        id: html_recheck
+        if: steps.html_autofix.outcome == 'success'
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -d '' html_files < "$RUNNER_TEMP/html-files"
+          npx --yes "html-validate@${HTML_VALIDATE_VERSION}" --formatter stylish "${html_files[@]}"
+
+      - name: Check inline JavaScript syntax
+        id: js_check
+        shell: bash
+        run: python3 .github/scripts/check-inline-js.py .
+
+      - name: Open a repair pull request
+        if: steps.html_validate.outcome == 'failure' && steps.html_autofix.outcome == 'success' && steps.html_recheck.outcome == 'success' && steps.js_check.outcome == 'success' && github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          FIX_BRANCH: automation/html-guardian-fixes
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -d '' html_files < "$RUNNER_TEMP/html-files"
+          if git diff --quiet -- "${html_files[@]}"; then
+            echo "The validator found a failure but produced no supported changes."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch -c "$FIX_BRANCH"
+          git add -u -- "${html_files[@]}"
+          if git diff --cached --quiet; then
+            echo "No tracked HTML changes remain after auto-fix."
+            exit 0
+          fi
+
+          git commit -m "Apply safe HTML auto-fixes"
+          gh auth setup-git
+          git push --force origin "$FIX_BRANCH"
+
+          pr_number="$(gh pr list --repo "$GITHUB_REPOSITORY" --head "${GITHUB_REPOSITORY_OWNER}:$FIX_BRANCH" --base main --state open --json number --jq '.[0].number')"
+          if [[ -z "$pr_number" || "$pr_number" == "null" ]]; then
+            gh pr create \
+              --repo "$GITHUB_REPOSITORY" \
+              --base main \
+              --head "$FIX_BRANCH" \
+              --title "HTML Guardian: safe markup repairs" \
+              --body "The HTML Guardian applied only fixes supported by html-validate and verified the resulting HTML and inline JavaScript in the same run. Please review before merging. No application logic or health data was changed."
+          else
+            gh pr edit "$pr_number" \
+              --title "HTML Guardian: safe markup repairs" \
+              --body "The HTML Guardian applied only fixes supported by html-validate and verified the resulting HTML and inline JavaScript in the same run. Please review before merging. No application logic or health data was changed."
+          fi
+
+      - name: Check published GitHub Pages app
+        id: live_check
+        if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+        shell: bash
+        run: |
+          set -euo pipefail
+          status="$(curl --silent --show-error --location --max-time 30 \
+            --output "$RUNNER_TEMP/live-page.html" \
+            --write-out '%{http_code}' "$LIVE_SITE_URL")"
+          echo "http_status=$status" >> "$GITHUB_OUTPUT"
+          if [[ "$status" != "200" ]]; then
+            echo "::error::Live page returned HTTP $status."
+            exit 1
+          fi
+          if ! grep -qi 'Father Health Command Center' "$RUNNER_TEMP/live-page.html"; then
+            echo "::error::Live page returned HTTP 200 but the expected app title was missing."
+            exit 1
+          fi
+          echo "Live page returned HTTP 200 and the expected app title."
+
+      - name: Write run summary
+        if: always()
+        env:
+          FILE_COUNT: ${{ steps.files.outputs.count }}
+          HTML_INITIAL: ${{ steps.html_validate.outcome }}
+          HTML_FIX: ${{ steps.html_autofix.outcome }}
+          HTML_RECHECK: ${{ steps.html_recheck.outcome }}
+          JS_RESULT: ${{ steps.js_check.outcome }}
+          LIVE_RESULT: ${{ steps.live_check.outcome }}
+          EVENT_NAME: ${{ github.event_name }}
+        shell: bash
+        run: |
+          if [[ "$HTML_INITIAL" == "success" ]]; then
+            html_status="PASS"
+          elif [[ "$HTML_FIX" == "success" && "$HTML_RECHECK" == "success" ]]; then
+            html_status="AUTO-FIXED; review PR if one was opened"
+          else
+            html_status="NEEDS REVIEW"
+          fi
+
+          {
+            echo "# HTML Guardian report"
+            echo
+            echo "- Trigger: `$EVENT_NAME`"
+            echo "- HTML files scanned: ${FILE_COUNT:-unknown}"
+            echo "- HTML result: **$html_status**"
+            echo "- Inline JavaScript syntax: **$JS_RESULT**"
+            if [[ "$LIVE_RESULT" == "skipped" ]]; then
+              echo "- Published-page check: skipped for this event"
+            else
+              echo "- Published-page check: **$LIVE_RESULT**"
+            fi
+            echo
+            echo "Open the job logs for file-level diagnostics. Supported markup repairs are proposed in a pull request and are never merged automatically."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Enforce check results
+        if: always()
+        env:
+          HTML_INITIAL: ${{ steps.html_validate.outcome }}
+          HTML_FIX: ${{ steps.html_autofix.outcome }}
+          HTML_RECHECK: ${{ steps.html_recheck.outcome }}
+          JS_RESULT: ${{ steps.js_check.outcome }}
+          LIVE_RESULT: ${{ steps.live_check.outcome }}
+          EVENT_NAME: ${{ github.event_name }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          html_ok=false
+          if [[ "$HTML_INITIAL" == "success" || ( "$HTML_FIX" == "success" && "$HTML_RECHECK" == "success" ) ]]; then
+            html_ok=true
+          fi
+          if [[ "$html_ok" != "true" ]]; then
+            echo "::error::HTML validation failed and could not be fully auto-fixed."
+            exit 1
+          fi
+          if [[ "$JS_RESULT" != "success" ]]; then
+            echo "::error::Inline JavaScript syntax check did not pass."
+            exit 1
+          fi
+          if [[ ( "$EVENT_NAME" == "schedule" || "$EVENT_NAME" == "workflow_dispatch" ) && "$LIVE_RESULT" != "success" ]]; then
+            echo "::error::Published-page check did not pass."
+            exit 1
+          fi
