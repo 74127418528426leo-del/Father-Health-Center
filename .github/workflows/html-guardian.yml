@@ -116,6 +116,27 @@ jobs:
             exit 0
           fi
 
+          git fetch origin "$FIX_BRANCH:refs/remotes/origin/$FIX_BRANCH" >/dev/null 2>&1 || true
+          if git show-ref --verify --quiet "refs/remotes/origin/$FIX_BRANCH"; then
+            same_html=true
+            for path in "${html_files[@]}"; do
+              local_path="${path#./}"
+              local_sha="$(git hash-object "$path")"
+              remote_sha="$(git rev-parse "refs/remotes/origin/$FIX_BRANCH:$local_path" 2>/dev/null || true)"
+              if [[ "$local_sha" != "$remote_sha" ]]; then
+                same_html=false
+                break
+              fi
+            done
+            if [[ "$same_html" == "true" ]]; then
+              existing_pr="$(gh pr list --repo "$GITHUB_REPOSITORY" --head "${GITHUB_REPOSITORY_OWNER}:$FIX_BRANCH" --base main --state open --json number --jq '.[0].number')"
+              if [[ -n "$existing_pr" && "$existing_pr" != "null" ]]; then
+                echo "The same safe repair is already proposed; leaving its branch unchanged."
+                exit 0
+              fi
+            fi
+          fi
+
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git switch -c "$FIX_BRANCH"
