@@ -32,10 +32,10 @@ jobs:
       LIVE_SITE_URL: "https://74127418528426leo-del.github.io/Father-Health-Center/"
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7.0.1
 
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7.1.0
         with:
           node-version: "22"
 
@@ -67,7 +67,7 @@ jobs:
 
       - name: Apply supported markup auto-fixes
         id: html_autofix
-        if: steps.html_validate.outcome == 'failure' && github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
         continue-on-error: true
         shell: bash
         run: |
@@ -84,13 +84,26 @@ jobs:
           mapfile -d '' html_files < "$RUNNER_TEMP/html-files"
           npx --yes "html-validate@${HTML_VALIDATE_VERSION}" --formatter stylish "${html_files[@]}"
 
+      - name: Detect supported auto-fixes
+        id: repair_changes
+        if: steps.html_autofix.outcome == 'success'
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -d '' html_files < "$RUNNER_TEMP/html-files"
+          if git diff --quiet -- "${html_files[@]}"; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Check inline JavaScript syntax
         id: js_check
         shell: bash
         run: python3 .github/scripts/check-inline-js.py .
 
       - name: Open a repair pull request
-        if: steps.html_validate.outcome == 'failure' && steps.html_autofix.outcome == 'success' && steps.html_recheck.outcome == 'success' && steps.js_check.outcome == 'success' && github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+        if: steps.repair_changes.outputs.changed == 'true' && steps.html_recheck.outcome == 'success' && steps.js_check.outcome == 'success' && github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           FIX_BRANCH: automation/html-guardian-fixes
@@ -157,12 +170,16 @@ jobs:
           HTML_INITIAL: ${{ steps.html_validate.outcome }}
           HTML_FIX: ${{ steps.html_autofix.outcome }}
           HTML_RECHECK: ${{ steps.html_recheck.outcome }}
+          FIX_CHANGED: ${{ steps.repair_changes.outputs.changed }}
           JS_RESULT: ${{ steps.js_check.outcome }}
           LIVE_RESULT: ${{ steps.live_check.outcome }}
           EVENT_NAME: ${{ github.event_name }}
         shell: bash
         run: |
           if [[ "$HTML_INITIAL" == "success" ]]; then
+            html_status="PASS"
+              html_status="PASS; safe fixes proposed in PR"
+            fi
             html_status="PASS"
           elif [[ "$HTML_FIX" == "success" && "$HTML_RECHECK" == "success" ]]; then
             html_status="AUTO-FIXED; review PR if one was opened"
@@ -173,7 +190,7 @@ jobs:
           {
             echo "# HTML Guardian report"
             echo
-            echo "- Trigger: `$EVENT_NAME`"
+            echo "- Trigger: $EVENT_NAME"
             echo "- HTML files scanned: ${FILE_COUNT:-unknown}"
             echo "- HTML result: **$html_status**"
             echo "- Inline JavaScript syntax: **$JS_RESULT**"
